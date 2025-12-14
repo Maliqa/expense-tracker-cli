@@ -1,6 +1,6 @@
 import sys
 import json
-from datetime import datetime
+from datetime import date
 
 DATA_FILE = "expenses.json"
 
@@ -9,7 +9,7 @@ def load_expenses():
     try:
         with open(DATA_FILE, "r") as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return []
 
 
@@ -20,24 +20,35 @@ def save_expenses(expenses):
 
 def add_expense(description, amount):
     expenses = load_expenses()
-
     expense = {
         "id": len(expenses) + 1,
         "description": description,
-        "amount": amount,
-        "date": datetime.now().strftime("%Y-%m-%d")
+        "amount": float(amount),
+        "date": str(date.today())
     }
-
     expenses.append(expense)
     save_expenses(expenses)
-
     print("Expense added successfully.")
+
+
+def list_expenses():
+    expenses = load_expenses()
+    if not expenses:
+        print("No expenses found.")
+        return
+
+    print("ID | Date       | Description | Amount")
+    print("--------------------------------------")
+    for e in expenses:
+        print(f"{e['id']}  | {e['date']} | {e['description']} | {e['amount']}")
 
 
 def main():
     if len(sys.argv) < 2:
         print("Usage: python expense_tracker.py <command>")
-        print("Commands: add")
+        print("Commands:")
+        print("  add --description <text> --amount <number>")
+        print("  list")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -51,9 +62,12 @@ def main():
         amt_index = sys.argv.index("--amount") + 1
 
         description = sys.argv[desc_index]
-        amount = float(sys.argv[amt_index])
+        amount = sys.argv[amt_index]
 
         add_expense(description, amount)
+
+    elif command == "list":
+        list_expenses()
 
     else:
         print("Unknown command")
